@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Making up the NumBURRS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NumBURRS">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1115; --panel:#181b21; --panel2:#20242c; --line:#2c313b;
+    --text:#eef1f5; --muted:#8b93a1; --accent:#c6f432; --accent-ink:#141a00;
+    --warn:#ff8a65; --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+  body{min-height:100dvh;display:flex;flex-direction:column;
+       padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px}
+  h1{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:28px;letter-spacing:.5px;margin:0;text-transform:uppercase}
+  h1 span{color:var(--accent)}
+  .units{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px}
+  .units button{border:0;background:transparent;color:var(--muted);font:600 13px Inter,sans-serif;
+                padding:7px 14px;border-radius:999px;cursor:pointer}
+  .units button.on{background:var(--accent);color:var(--accent-ink)}
+  main{flex:1;padding:6px 16px 110px;max-width:520px;width:100%;margin:0 auto}
+  .view{display:none}.view.on{display:block}
+  .hint{color:var(--muted);font-size:13px;margin:4px 2px 14px;line-height:1.45}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 16px;margin-bottom:12px;transition:border-color .2s, box-shadow .2s}
+  .card.calc{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .label{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:18px;letter-spacing:1px;text-transform:uppercase}
+  .tag{font-size:11px;font-weight:600;color:var(--accent-ink);background:var(--accent);padding:2px 8px;border-radius:999px;opacity:0;transition:opacity .2s}
+  .card.calc .tag{opacity:1}
+  .sub{color:var(--muted);font-size:12px}
+  .row{display:flex;gap:8px;align-items:flex-end}
+  .f{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+  .f small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px;padding-left:2px}
+  input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+        font:700 30px "Barlow Condensed",sans-serif;text-align:center;padding:10px 6px;border-radius:12px;outline:none}
+  input:focus{border-color:var(--accent)}
+  input::placeholder{color:#4a515d}
+  .sep{font:700 28px "Barlow Condensed",sans-serif;color:var(--muted);padding-bottom:12px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .chip{background:var(--panel2);border:1px solid var(--line);color:var(--text);font:500 12px Inter,sans-serif;
+        padding:6px 11px;border-radius:999px;cursor:pointer}
+  .chip:active{border-color:var(--accent)}
+  .speed{margin-top:8px;color:var(--muted);font-size:13px;min-height:18px}
+  .speed b{color:var(--text);font-weight:600}
+  .actions{display:flex;gap:10px;margin-top:6px}
+  .btn{flex:1;border:0;border-radius:14px;padding:16px;font:700 20px "Barlow Condensed",sans-serif;
+       letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+  .primary{background:var(--accent);color:var(--accent-ink)}
+  .ghost{background:var(--panel);color:var(--text);border:1px solid var(--line);flex:0 0 32%}
+  .msg{min-height:20px;margin:8px 2px 4px;font-size:13px;color:var(--warn)}
+  .splits{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .sp{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 4px;text-align:center}
+  .sp small{display:block;color:var(--muted);font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+  .sp span{font:600 17px "Barlow Condensed",sans-serif;color:var(--text)}
+  .race{display:flex;align-items:center;gap:10px}
+  .race .rl{flex:0 0 74px}
+  .race .rl .label{display:block;font-size:17px;line-height:1.1}
+  .race .rl .sub{font-size:11px}
+  .race .row{flex:1;gap:4px}
+  .race input{font-size:22px;padding:8px 2px;border-radius:10px}
+  .race .sep{font-size:20px;padding-bottom:8px}
+  .vdot{flex:0 0 58px;text-align:center;border-radius:12px;padding:6px 2px;background:var(--panel2);border:1px solid var(--line)}
+  .vdot small{display:block;font-size:9px;letter-spacing:1px;color:var(--muted)}
+  .vdot b{font:700 22px "Barlow Condensed",sans-serif;color:var(--muted)}
+  .vdot.best{border-color:#4ade80;background:rgba(74,222,128,.12)} .vdot.best b{color:#4ade80}
+  .vdot.worst{border-color:#f87171;background:rgba(248,113,113,.12)} .vdot.worst b{color:#f87171}
+  .vdot.mid b{color:var(--text)}
+  .vbox{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .vbox input{flex:0 0 120px;font-size:34px;color:var(--accent)}
+  h2.sec{font:600 16px "Barlow Condensed",sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:18px 2px 8px}
+  h2.sec .sub{text-transform:none;letter-spacing:0;font-family:Inter,sans-serif;font-weight:400;margin-left:6px}
+  .tbl{padding:4px 14px}
+  .tr{display:flex;align-items:baseline;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .tr:last-child{border-bottom:0}
+  .tr .n{flex:1;font-weight:600;font-size:14px}
+  .tr .n small{display:block;color:var(--muted);font-weight:400;font-size:11px;margin-top:2px}
+  .tr .v{font:600 20px "Barlow Condensed",sans-serif;text-align:right}
+  .tr .p{flex:0 0 78px;text-align:right;color:var(--muted);font-size:13px}
+  .tr .v small{display:block;font:400 11px Inter,sans-serif;color:var(--muted)}
+  .about{min-height:62dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px 8px}
+  .big{font:700 clamp(52px,17vw,96px)/.92 "Barlow Condensed",sans-serif;text-transform:uppercase;margin:0;letter-spacing:.5px}
+  .big span{display:block;color:var(--accent)}
+  .credit{margin-top:22px;color:var(--muted);font-size:15px;line-height:1.5;max-width:300px}
+  .credit em{color:var(--text);font-style:normal;font-weight:600}
+  .save-state{color:var(--muted);font-size:12px;text-align:center;min-height:16px;margin-top:4px}
+  .soon{text-align:center;color:var(--muted);padding:70px 20px}
+  .soon .label{color:var(--text);font-size:24px;display:block;margin-bottom:8px}
+  nav{position:fixed;left:0;right:0;bottom:0;background:rgba(15,17,21,.94);backdrop-filter:blur(10px);
+      border-top:1px solid var(--line);display:flex;justify-content:space-around;
+      padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+  nav button{flex:1;background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;
+             font:500 11px Inter,sans-serif;padding:6px 0;cursor:pointer}
+  nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  nav button.on{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Run<span>Calc</span></h1>
+  <div class="units" role="group" aria-label="Units">
+    <button id="u-km" class="on" type="button">KM</button>
+    <button id="u-mi" type="button">MILES</button>
+  </div>
+</header>
+
+<main>
+  <section id="tab-1" class="view on">
+    <p class="hint">Fill in any two and tap Calculate to get the third. Blank time or pace boxes count as 0.</p>
+
+    <div class="card" id="c-time">
+      <div class="card-head"><span class="label">Time</span><span class="tag">Calculated</span></div>
+      <div class="row">
+        <label class="f"><small>hrs</small><input id="t-h" inputmode="numeric" placeholder="0"></label>
+        <span class="sep">:</span>
+        <label class="f"><small>mins</small><input id="t-m" inputmode="numeric" placeholder="00"></label>
+        <span class="sep">:</span>
+        <label class="f"><small>secs</small><input id="t-s" inputmode="decimal" placeholder="00"></label>
+      </div>
+    </div>
+
+    <div class="card" id="c-dist">
+      <div class="card-head"><span class="label">Distance</span><span class="tag">Calculated</span></div>
+      <div class="row">
+        <label class="f"><small id="d-unit">km</small><input id="d" inputmode="decimal" placeholder="0.00"></label>
+      </div>
+      <div class="chips">
+        <button class="chip" type="button" data-km="5">5K</button>
+        <button class="chip" type="button" data-km="10">10K</button>
+        <button class="chip" type="button" data-km="21.0975">Half</button>
+        <button class="chip" type="button" data-km="42.195">Marathon</button>
+      </div>
+    </div>
+
+    <div class="card" id="c-pace">
+      <div class="card-head"><span class="label">Pace</span><span class="tag">Calculated</span></div>
+      <div class="row">
+        <label class="f"><small>mins</small><input id="p-m" inputmode="numeric" placeholder="0"></label>
+        <span class="sep">:</span>
+        <label class="f"><small>secs</small><input id="p-s" inputmode="decimal" placeholder="00"></label>
+        <span class="sub" id="p-unit" style="padding-bottom:16px;white-space:nowrap">/km</span>
+      </div>
+      <div class="speed" id="speed"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" id="clear" type="button">Clear</button>
+      <button class="btn primary" id="calc" type="button">Calculate</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+
+    <div class="splits" id="splits" aria-label="Track splits at this pace">
+      <div class="sp"><small>200m</small><span id="sp-200">–</span></div>
+      <div class="sp"><small>400m</small><span id="sp-400">–</span></div>
+      <div class="sp"><small>800m</small><span id="sp-800">–</span></div>
+      <div class="sp"><small>1200m</small><span id="sp-1200">–</span></div>
+    </div>
+  </section>
+
+  <section id="tab-2" class="view">
+    <p class="hint">Your current race times. They're saved as you type. VDOT uses Jack Daniels' formula: best in green, worst in red.</p>
+    <div id="races"></div>
+    <div class="save-state" id="save-state"></div>
+  </section>
+  <section id="tab-3" class="view">
+    <div class="card vbox">
+      <div>
+        <span class="label">VDOT</span>
+        <div class="sub" id="pv-note">Best from your Races tab</div>
+      </div>
+      <input id="pv" inputmode="decimal" placeholder="–">
+    </div>
+
+    <h2 class="sec">Predicted race times</h2>
+    <div class="card tbl" id="pred"></div>
+
+    <h2 class="sec">Training paces <span class="sub" id="tr-range"></span></h2>
+    <div class="card tbl" id="train"></div>
+    <p class="hint" id="tr-note" style="margin-top:8px"></p>
+  </section>
+  <section id="tab-4" class="view">
+    <div class="about">
+      <h2 class="big">Making up the <span>NumBURRS</span></h2>
+      <p class="credit">Created by Ian <em>“King of Tokyo”</em> Carruthers &amp; Claude</p>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button class="on" data-tab="1" type="button">
+    <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>Calculator
+  </button>
+  <button data-tab="2" type="button">
+    <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg>Races
+  </button>
+  <button data-tab="3" type="button">
+    <svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8M14 8h6v6"/></svg>Predict
+  </button>
+  <button data-tab="4" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>About
+  </button>
+</nav>
+
+<script>
+(function(){
+  const KM_PER_MI = 1.609344;
+  const $ = id => document.getElementById(id);
+  const F = {h:$('t-h'), m:$('t-m'), s:$('t-s'), d:$('d'), pm:$('p-m'), ps:$('p-s')};
+  const cards = {time:$('c-time'), dist:$('c-dist'), pace:$('c-pace')};
+  const groups = {time:[F.h,F.m,F.s], dist:[F.d], pace:[F.pm,F.ps]};
+  let unit = 'km';
+  let order = []; // most recently edited group first
+  let calculated = null;
+
+  try { const u = localStorage.getItem('runcalc-unit'); if (u === 'mi' || u === 'km') unit = u; } catch(e){}
+
+  const num = el => { const v = el.value.trim().replace(',', '.'); return v === '' ? 0 : parseFloat(v); };
+  const filled = g => groups[g].some(el => el.value.trim() !== '');
+  const bad = g => groups[g].some(el => { const v = el.value.trim().replace(',', '.'); return v !== '' && (isNaN(+v) || +v < 0); });
+
+  const timeSec = () => num(F.h)*3600 + num(F.m)*60 + num(F.s);
+  const paceSec = () => num(F.pm)*60 + num(F.ps);
+  const pad = n => String(n).padStart(2,'0');
+  const fmtDist = d => String(Math.round(d*1000)/1000);
+
+  function setTime(sec){
+    sec = Math.round(sec);
+    F.h.value = Math.floor(sec/3600);
+    F.m.value = pad(Math.floor(sec%3600/60));
+    F.s.value = pad(sec%60);
+  }
+  function setPace(sec){
+    sec = Math.round(sec);
+    F.pm.value = Math.floor(sec/60);
+    F.ps.value = pad(sec%60);
+  }
+
+  function mark(g){
+    Object.values(cards).forEach(c => c.classList.remove('calc'));
+    calculated = g;
+    if (g) cards[g].classList.add('calc');
+  }
+  function say(t){ $('msg').textContent = t || ''; }
+
+  function updateSpeed(){
+    const p = paceSec();
+    if (filled('pace') && p > 0){
+      const spd = 3600 / p;
+      $('speed').innerHTML = 'Speed <b>' + spd.toFixed(2) + (unit === 'km' ? ' km/h' : ' mph') + '</b>';
+    } else $('speed').textContent = '';
+    updateSplits();
+  }
+
+  function updateSplits(){
+    const p = paceSec();
+    const ok = filled('pace') && !bad('pace') && p > 0;
+    const perMetre = p / (unit === 'km' ? 1000 : KM_PER_MI * 1000);
+    [200, 400, 800, 1200].forEach(m => {
+      let txt = '–';
+      if (ok){
+        const dp = m === 200 ? 1 : 0; // tenths for the 200m rep only
+        const s = Math.round(perMetre * m * 10**dp) / 10**dp;
+        if (s > 90){
+          const secs = (s - Math.floor(s/60)*60).toFixed(dp);
+          txt = Math.floor(s/60) + ':' + secs.padStart(dp ? 4 : 2, '0');
+        } else txt = s.toFixed(dp) + 's';
+      }
+      $('sp-' + m).textContent = txt;
+    });
+  }
+
+  function calculate(){
+    say('');
+    for (const g of ['time','dist','pace']) if (bad(g)) return say('Please enter numbers only.');
+    const empty = ['time','dist','pace'].filter(g => !filled(g));
+    let target;
+    if (empty.length === 1) target = empty[0];
+    else if (empty.length === 0) {
+      // all three filled: recalculate the one the user touched least recently
+      target = calculated && !order.slice(0,2).includes(calculated)
+        ? calculated
+        : ['time','dist','pace'].find(g => !order.slice(0,2).includes(g));
+    } else return say('Enter any two of time, distance and pace.');
+
+    const t = timeSec(), d = num(F.d), p = paceSec();
+    if (target === 'time'){
+      if (d <= 0 || p <= 0) return say('Distance and pace must be more than zero.');
+      setTime(d * p);
+    } else if (target === 'dist'){
+      if (t <= 0 || p <= 0) return say('Time and pace must be more than zero.');
+      F.d.value = fmtDist(t / p);
+    } else {
+      if (t <= 0 || d <= 0) return say('Time and distance must be more than zero.');
+      setPace(t / d);
+    }
+    mark(target);
+    updateSpeed();
+  }
+
+  function applyUnit(){
+    $('u-km').classList.toggle('on', unit === 'km');
+    $('u-mi').classList.toggle('on', unit === 'mi');
+    $('d-unit').textContent = unit === 'km' ? 'km' : 'miles';
+    $('p-unit').textContent = unit === 'km' ? '/km' : '/mile';
+    updateSpeed();
+    refreshRaces();
+  }
+
+  function switchUnit(u){
+    if (u === unit) return;
+    const f = u === 'mi' ? 1/KM_PER_MI : KM_PER_MI; // distance factor
+    if (filled('dist') && !bad('dist')) F.d.value = fmtDist(num(F.d) * f);
+    if (filled('pace') && !bad('pace')) setPace(paceSec() / f);
+    unit = u;
+    try { localStorage.setItem('runcalc-unit', u); } catch(e){}
+    applyUnit();
+  }
+
+  Object.entries(groups).forEach(([g, els]) => els.forEach(el => {
+    el.addEventListener('input', () => {
+      order = [g, ...order.filter(x => x !== g)];
+      if (calculated === g) mark(null);
+      say('');
+      if (g === 'pace') updateSpeed();
+    });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { el.blur(); calculate(); } });
+    el.addEventListener('focus', () => el.select());
+  }));
+
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    const km = parseFloat(c.dataset.km);
+    F.d.value = fmtDist(unit === 'km' ? km : km / KM_PER_MI);
+    order = ['dist', ...order.filter(x => x !== 'dist')];
+    if (calculated === 'dist') mark(null);
+    say('');
+  }));
+
+  $('calc').addEventListener('click', calculate);
+  $('clear').addEventListener('click', () => {
+    Object.values(F).forEach(el => el.value = '');
+    order = []; mark(null); say(''); updateSpeed();
+  });
+  $('u-km').addEventListener('click', () => switchUnit('km'));
+  $('u-mi').addEventListener('click', () => switchUnit('mi'));
+
+  document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'tab-' + b.dataset.tab));
+  }));
+
+  /* ---------- Tab 2: race times + VDOT ---------- */
+  const RACES = [
+    {key:'mile', name:'Mile',     metres:1609.344},
+    {key:'5k',   name:'5K',       metres:5000},
+    {key:'10k',  name:'10K',      metres:10000},
+    {key:'10mi', name:'10 Mile',  metres:16093.44},
+    {key:'half', name:'Half',     metres:21097.5},
+    {key:'full', name:'Marathon', metres:42195}
+  ];
+  const LS_KEY = 'runcalc-races';
+  let races = {};      // key -> {h,m,s} strings as typed
+  let racesUpdated = 0;
+  const raceEls = {};
+
+  // Daniels & Gilbert VDOT: VO2 cost of the speed / fraction of VO2max sustainable for the duration
+  function vdot(metres, seconds){
+    const t = seconds / 60, v = metres / t; // metres per minute
+    const vo2 = -4.60 + 0.182258*v + 0.000104*v*v;
+    const pct = 0.8 + 0.1894393*Math.exp(-0.012778*t) + 0.2989558*Math.exp(-0.1932605*t);
+    return vo2 / pct;
+  }
+  const raceSecs = r => {
+    if (!r) return 0;
+    const n = x => { const v = String(x||'').trim().replace(',', '.'); return v === '' ? 0 : parseFloat(v); };
+    const s = n(r.h)*3600 + n(r.m)*60 + n(r.s);
+    return isFinite(s) && s > 0 ? s : 0;
+  };
+
+  function buildRaces(){
+    const wrap = $('races');
+    RACES.forEach(R => {
+      const card = document.createElement('div');
+      card.className = 'card race';
+      card.innerHTML =
+        '<div class="rl"><span class="label">' + R.name + '</span><span class="sub" data-pace></span></div>' +
+        '<div class="row">' +
+          '<label class="f"><small>h</small><input data-f="h" inputmode="numeric" placeholder="0"></label><span class="sep">:</span>' +
+          '<label class="f"><small>m</small><input data-f="m" inputmode="numeric" placeholder="00"></label><span class="sep">:</span>' +
+          '<label class="f"><small>s</small><input data-f="s" inputmode="numeric" placeholder="00"></label>' +
+        '</div>' +
+        '<div class="vdot"><small>VDOT</small><b>–</b></div>';
+      wrap.appendChild(card);
+      const inputs = {};
+      card.querySelectorAll('input').forEach(inp => {
+        inputs[inp.dataset.f] = inp;
+        inp.addEventListener('focus', () => inp.select());
+        inp.addEventListener('input', () => {
+          races[R.key] = {h:inputs.h.value, m:inputs.m.value, s:inputs.s.value};
+          racesUpdated = Date.now();
+          pvManual = false;
+          refreshRaces();
+          saveRaces();
+        });
+        inp.addEventListener('blur', () => { // tidy display e.g. 5 -> 05
+          const r = races[R.key]; if (!raceSecs(r)) return;
+          ['m','s'].forEach(f => { if (inputs[f].value.trim() !== '') inputs[f].value = pad(inputs[f].value.trim()); });
+          races[R.key] = {h:inputs.h.value, m:inputs.m.value, s:inputs.s.value};
+        });
+      });
+      raceEls[R.key] = {inputs, vdot:card.querySelector('.vdot'), pace:card.querySelector('[data-pace]')};
+    });
+  }
+
+  function fillRaceInputs(){
+    RACES.forEach(R => {
+      const r = races[R.key] || {}, el = raceEls[R.key].inputs;
+      el.h.value = r.h || ''; el.m.value = r.m || ''; el.s.value = r.s || '';
+    });
+    refreshRaces();
+  }
+
+  function refreshRaces(){
+    if (!raceEls['5k']) return;
+    const vals = {};
+    RACES.forEach(R => {
+      const secs = raceSecs(races[R.key]);
+      const e = raceEls[R.key];
+      if (secs){
+        vals[R.key] = vdot(R.metres, secs);
+        const per = secs / (R.metres / (unit === 'km' ? 1000 : KM_PER_MI*1000));
+        const p = Math.round(per);
+        e.pace.textContent = Math.floor(p/60) + ':' + pad(p%60) + (unit === 'km' ? '/km' : '/mi');
+      } else e.pace.textContent = '';
+    });
+    const list = Object.values(vals);
+    const best = Math.max(...list), worst = Math.min(...list);
+    RACES.forEach(R => {
+      const e = raceEls[R.key], v = vals[R.key];
+      e.vdot.classList.remove('best','worst','mid');
+      if (v === undefined || !isFinite(v) || v <= 0){ e.vdot.querySelector('b').textContent = '–'; return; }
+      e.vdot.querySelector('b').textContent = v.toFixed(1);
+      if (list.length > 1 && best !== worst){
+        e.vdot.classList.add(v === best ? 'best' : v === worst ? 'worst' : 'mid');
+      } else e.vdot.classList.add('mid');
+    });
+    const good = list.filter(v => isFinite(v) && v > 0);
+    vdotRange = good.length ? [Math.min(...good), Math.max(...good)] : null;
+    renderPredict();
+  }
+
+  /* ---------- Tab 3: predictions + training paces ---------- */
+  let vdotRange = null;   // [lowest, highest] VDOT from the Races tab
+  let pvManual = false;   // true while the user has overridden the box (not saved)
+  const PV = $('pv');
+
+  // speed (m/min) at which the VO2 cost equals a given VO2
+  const velForVO2 = vo2 => (-0.182258 + Math.sqrt(0.182258**2 + 4*0.000104*(vo2 + 4.60))) / (2*0.000104);
+  // race time (s) for a distance at a given VDOT: vdot() falls as time rises, so bisect
+  function predictSecs(metres, V){
+    let lo = 30, hi = 60*60*30;
+    for (let i = 0; i < 80; i++){
+      const mid = (lo + hi) / 2;
+      if (vdot(metres, mid) > V) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+  const unitM = () => unit === 'km' ? 1000 : KM_PER_MI*1000;
+  const fmtClock = sec => {
+    sec = Math.round(sec);
+    const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+    return h ? h + ':' + pad(m) + ':' + pad(s) : m + ':' + pad(s);
+  };
+  const paceOf = vel => fmtClock(unitM() / vel * 60);     // vel in m/min -> seconds per km/mile
+  const per400 = vel => Math.round(400 / vel * 60);         // seconds per 400m
+  const uLbl = () => unit === 'km' ? '/km' : '/mi';
+
+  // Daniels training intensities as velocity for a VDOT
+  const TRAIN = [
+    {name:'Marathon', note:'M pace', vel: V => 42195 / (predictSecs(42195, V) / 60)},
+    {name:'Tempo',    note:'T pace · lactate threshold', vel: V => velForVO2(0.88 * V)},
+    {name:'VO2 max',  note:'I pace · intervals', vel: V => velForVO2(0.975 * V), track:true},
+    {name:'Speed',    note:'R pace · repetitions', track:true,
+      vel: V => { const i = velForVO2(0.975 * V); return 400 / (400 / i - 0.1); } } // ~6 s/400m quicker than I
+  ];
+
+  function renderPredict(){
+    if (!pvManual){
+      PV.value = vdotRange ? vdotRange[1].toFixed(1) : '';
+      $('pv-note').textContent = vdotRange ? 'Best from your Races tab' : 'Add a time in Races, or type one';
+    }
+    const V = parseFloat(PV.value.replace(',', '.'));
+    const ok = isFinite(V) && V >= 20 && V <= 90;
+
+    $('pred').innerHTML = RACES.map(R => {
+      if (!ok) return '<div class="tr"><span class="n">' + R.name + '</span><span class="v">–</span><span class="p"></span></div>';
+      const t = predictSecs(R.metres, V);
+      return '<div class="tr"><span class="n">' + R.name + '</span><span class="v">' + fmtClock(t) +
+             '</span><span class="p">' + fmtClock(t / (R.metres / unitM())) + uLbl() + '</span></div>';
+    }).join('');
+
+    // training range: lower end = lowest race VDOT, upper end = the VDOT in the box
+    const range = ok
+      ? [vdotRange ? Math.min(vdotRange[0], V) : V, V]
+      : vdotRange;
+    $('tr-range').textContent = range
+      ? (range[0] === range[1] ? 'VDOT ' + range[0].toFixed(1) : 'VDOT ' + range[0].toFixed(1) + ' – ' + range[1].toFixed(1))
+      : '';
+    $('train').innerHTML = TRAIN.map(T => {
+      let val = '–', sub = '';
+      if (range){
+        const slow = T.vel(range[0]), fast = T.vel(range[1]);
+        const a = paceOf(slow), b = paceOf(fast);
+        val = (a === b ? a : a + ' – ' + b) + '<small>' + (unit === 'km' ? 'min/km' : 'min/mile') + '</small>';
+        if (T.track){
+          const x = per400(slow), y = per400(fast);
+          sub = '<small>400m: ' + (x === y ? x : x + '–' + y) + 's</small>';
+        }
+      }
+      return '<div class="tr"><span class="n">' + T.name + '<small>' + T.note + '</small></span><span class="v">' + val + sub + '</span></div>';
+    }).join('');
+    $('tr-note').textContent = vdotRange
+      ? 'Ranges run from your lowest race VDOT up to the VDOT in the box above.'
+      : '';
+  }
+
+  PV.addEventListener('focus', () => PV.select());
+  PV.addEventListener('input', () => {
+    pvManual = true;
+    $('pv-note').textContent = 'Manual (not saved)';
+    renderPredict();
+  });
+
+  // Persistence: on this device (localStorage) and, when available, in your Claude account so it follows you between devices.
+  let db = null, docRef = null, saveTimer = null;
+  function saveRaces(){
+    try { localStorage.setItem(LS_KEY, JSON.stringify({races, updated:racesUpdated})); } catch(e){}
+    if (!docRef) return;
+    clearTimeout(saveTimer);
+    $('save-state').textContent = 'Saving…';
+    saveTimer = setTimeout(async () => {
+      try { await docRef.set({races, updated:racesUpdated}); $('save-state').textContent = 'Saved'; }
+      catch(e){ $('save-state').textContent = 'Saved on this device'; }
+    }, 600);
+  }
+
+  function loadLocal(){
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if (raw && raw.races){ races = raw.races; racesUpdated = raw.updated || 0; }
+    } catch(e){}
+  }
+
+  async function connectCloud(){
+    try {
+      if (!window.claude || !window.claude.use) return;
+      const [d, u] = await Promise.all([claude.use('db'), claude.use('user')]);
+      if (!d || !u) return;
+      const id = await u.id();
+      if (!id) return;
+      db = d;
+      docRef = db.doc('data/users/' + id + '/races');
+      const snap = await docRef.get();
+      const remote = snap && (typeof snap.data === 'function' ? snap.data() : snap);
+      if (remote && remote.races && (remote.updated || 0) > racesUpdated){
+        races = remote.races; racesUpdated = remote.updated || 0;
+        try { localStorage.setItem(LS_KEY, JSON.stringify({races, updated:racesUpdated})); } catch(e){}
+        fillRaceInputs();
+      } else if (racesUpdated > ((remote && remote.updated) || 0)){
+        saveRaces();
+      }
+    } catch(e){ /* stay on device-only storage */ }
+  }
+
+  buildRaces();
+  loadLocal();
+  fillRaceInputs();
+  connectCloud();
+
+  // remember the open tab too
+  try { const t = localStorage.getItem('runcalc-tab'); if (t){ const b = document.querySelector('nav button[data-tab="'+t+'"]'); if (b) b.click(); } } catch(e){}
+  document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+    try { localStorage.setItem('runcalc-tab', b.dataset.tab); } catch(e){}
+    if (b.dataset.tab === '3'){ pvManual = false; renderPredict(); } // manual VDOT isn't kept
+  }));
+
+  applyUnit();
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
